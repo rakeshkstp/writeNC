@@ -9,6 +9,14 @@
 ### vunit <- Unit of the Dataset                     ###
 ########################################################
 writeNC <- function(fname,odata,varnames,dname,vunit) {
+  
+  if (!require(raster)) 
+    stop("raster package is missing")
+  if (!require(ncdf4)) 
+    stop("ncdf4 package is missing")
+  if (!require(oceanmap)) 
+    stop("oceanmap package is missing")
+  
   message(paste0("Saving rasters to file:",fname))
   # Getting lat and long for the rasters
   lon <- seq(xmin(odata),xmax(odata),xres(odata))
@@ -61,7 +69,7 @@ writeNC <- function(fname,odata,varnames,dname,vunit) {
   # add global attributes
   message("Writing global attributes")
   ncatt_put(ncout,0,"Title",substr(fname,1,nchar(fname)-3))
-  ncatt_put(ncout,0,"Institution","Université du Québec à Rimouski")
+  ncatt_put(ncout,0,"Institution","Universit? du Qu?bec ? Rimouski")
   ncatt_put(ncout,0,"Image Source","Ocean Biology Processing Group (OBPG), NASA-GSFC")
   #ncatt_put(ncout,0,"Reference",ref_article)
   ncatt_put(ncout,0,"History",paste("Rakesh Kumar Singh", date(), sep=", "))
