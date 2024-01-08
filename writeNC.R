@@ -1,24 +1,15 @@
-########################################################
-### Function to write raster stacks as NETCDF FILE   ###
-### Rakesh Kumar Singh 23 Sep 2022                   ###
-### Inputs:                                          ###
-### fname <- Filename for output NETCDF file         ###
-### odata <- Output raster stack                     ###
-### varnames <- Name of the image layers             ###
-### dname <- Name of the dataset                     ###
-### vunit <- Unit of the Dataset                     ###
-########################################################
 writeNC <- function(fname,odata,varnames,dname,vunit) {
   
-  if (!require(raster)) 
-    stop("raster package is missing")
+  if (!require(terra)) 
+    stop("terra package is missing")
   if (!require(ncdf4)) 
     stop("ncdf4 package is missing")
-  if (!require(oceanmap)) 
-    stop("oceanmap package is missing")
+ # if (!require(oceanmap)) 
+#    stop("oceanmap package is missing")
   
   message(paste0("Saving rasters to file:",fname))
   # Getting lat and long for the rasters
+  
   lon <- seq(xmin(odata),xmax(odata),xres(odata))
   lon<-lon[-length(lon)]
   lat <- seq(ymin(odata),ymax(odata),yres(odata))
@@ -43,10 +34,10 @@ writeNC <- function(fname,odata,varnames,dname,vunit) {
   
   # Replacing NAs with fillvalue
   message(paste0("Replacing NAs with ", fillvalue))
-  idx <- sapply(names(odata), FUN = function(x) {is.na(raster::values(odata[[x]]))},
+  idx <- sapply(1:nlyr(odata), FUN = function(x) {is.na(terra::values(odata[[x]]))},
                 simplify = FALSE, USE.NAMES = TRUE)
-  for (i in 1:nlayers(odata))
-    raster::values(odata[[i]])[idx[[i]]] <- fillvalue
+  for (i in 1:nlyr(odata))
+    terra::values(odata[[i]])[idx[[i]]] <- fillvalue
   rm(idx, i, fillvalue)
   
   
@@ -55,7 +46,7 @@ writeNC <- function(fname,odata,varnames,dname,vunit) {
   message(paste0(fname," is created"))
   
   # put variables
-  dummy <- sapply(1:length(zname), FUN = function(x){ncvar_put(ncout,var_def[[x]], raster2matrix(odata[[x]]),
+  dummy <- sapply(1:length(zname), FUN = function(x){ncvar_put(ncout,var_def[[x]], matrix(values(flip(odata[[x]])), nx, ny, byrow = FALSE),
                                                                start=c(1,1), count=c(nx,ny))},
                   simplify = FALSE, USE.NAMES = TRUE)
   message(paste0("Variables are written to ",fname))
@@ -69,11 +60,11 @@ writeNC <- function(fname,odata,varnames,dname,vunit) {
   # add global attributes
   message("Writing global attributes")
   ncatt_put(ncout,0,"Title",substr(fname,1,nchar(fname)-3))
-  ncatt_put(ncout,0,"Institution","Universit? du Qu?bec ? Rimouski")
-  ncatt_put(ncout,0,"Image Source","Ocean Biology Processing Group (OBPG), NASA-GSFC")
-  #ncatt_put(ncout,0,"Reference",ref_article)
+  ncatt_put(ncout,0,"Institution","Centre for Remote Imaging, Sensing and Processing (CRISP), National University of Singapore")
+  ncatt_put(ncout,0,"Image Source","NASA-Ocean Biology Distributed Active Archive Center (OBDAAC)")
+  ncatt_put(ncout,0,"Reference","Singh, R.K., Vader, A., Mundy, C.J., Søreide, J.E., Iken, K., Dunton, K.H., Castro de la Guardia, L., Sejr, M.K., Bélanger, S., 2022. Satellite-Derived Photosynthetically Available Radiation at the Coastal Arctic Seafloor. Remote Sens. 14, 5180. https://doi.org/10.3390/rs14205180")
   ncatt_put(ncout,0,"History",paste("Rakesh Kumar Singh", date(), sep=", "))
-  ncatt_put(ncout,0,"Software","SeaDASv8")
+  ncatt_put(ncout,0,"Processing Software","SeaDASv8")
   
   # close the file, writing data to disk
   nc_close(ncout)
